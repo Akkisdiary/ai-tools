@@ -2,12 +2,11 @@ import json
 import os
 import re
 import time
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Optional
 
 import httpx
 import pandas as pd
-
 from common import fetch_page_source
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
