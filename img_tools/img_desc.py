@@ -1,15 +1,14 @@
+import argparse
+import base64
 import getpass
 import io
 import os
-import base64
 import time
-import argparse
 
 from dotenv import load_dotenv
-from PIL import Image
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
-
+from PIL import Image
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -71,7 +70,9 @@ def caption_image(model, image_path):
     start = time.perf_counter()
     try:
         print("Captioning image:", image_path)
-        prompt = read_prompt(os.path.join(BASE_DIR, "prompts", "LORA.md"))
+        prompt = read_prompt(
+            os.path.join(BASE_DIR, "prompts", "AMATEUR_LORA_NEUTRAL.md")
+        )
         prompt = prompt.replace("{trigger_word}", "ohmyra")
         img = get_base64_image(image_path)
         image_b64 = f"data:image/png;base64,{img}"

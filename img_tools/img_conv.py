@@ -1,5 +1,6 @@
-from PIL import Image
 import os
+
+from PIL import Image
 
 
 def convert_webp_to_png(input_path, output_path):

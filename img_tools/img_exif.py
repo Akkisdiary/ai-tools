@@ -4,14 +4,15 @@ Script to modify EXIF metadata of images based on sample data.
 Supports JPEG, PNG, and other PIL-compatible formats.
 """
 
-import piexif
-from PIL import Image
+import argparse
 import os
-from datetime import datetime, timedelta
 import random
+from datetime import datetime, timedelta
+
 import cv2
 import numpy as np
-import argparse
+import piexif
+from PIL import Image
 
 
 def analyze_image(img):
