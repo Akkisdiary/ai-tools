@@ -7,7 +7,7 @@ from typing import Dict, List
 from urllib.parse import quote_plus
 
 import pandas as pd
-from common import fetch_page_source
+from src.yt_spider.common import fetch_page_source
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 

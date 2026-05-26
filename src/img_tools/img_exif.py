@@ -506,7 +506,7 @@ def modify_image_exif_folder(input_folder, output_folder):
             modify_image_exif(input_path, output_path)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         description="Modify EXIF metadata of images"
     )
@@ -523,3 +523,7 @@ if __name__ == "__main__":
     else:
         print(f"Modifying image: {input_path}")
         modify_image_exif(input_path)
+
+
+if __name__ == "__main__":
+    main()
