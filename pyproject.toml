@@ -1,7 +1,7 @@
 [project]
-name = "ollama-image-captioning"
+name = "ai-tools"
 version = "0.1.0"
-description = "Add your description here"
+description = "A collection of AI tools for various applications."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
