@@ -1,6 +1,7 @@
 import os
-
 from dotenv import load_dotenv
+from prompt_toolkit import PromptSession
+from prompt_toolkit.completion import WordCompleter
 
 load_dotenv()
 
@@ -14,6 +15,9 @@ from langchain_core.messages import (
 )
 from .file_tools import build_file_tools
 from pathlib import Path
+
+# Import the new renderer
+from .tui_handler import renderer
 
 BASE_DIR = os.path.dirname(__file__)
 
@@ -57,10 +61,15 @@ def exec_tool(tool_call: ToolCall) -> ToolMessage:
     if tool is None:
         result = f"error: unknown tool '{tool_name}'"
     else:
-        args = tool_call.get("args", {})
-        print(f" - exec_tool: {tool_name}({args})")
-        result = tool.invoke(args)
-        status = "success"
+        try:
+            args = tool_call.get("args", {})
+            renderer.display_tool_call_info(tool_name, args)
+            result = tool.invoke(args)
+            status = "success"
+        except Exception as e:
+            result = (
+                f"runtime error during execution: {type(e).__name__}: {str(e)}"
+            )
     return ToolMessage(
         name=tool_name,
         content=result,
@@ -70,6 +79,7 @@ def exec_tool(tool_call: ToolCall) -> ToolMessage:
 
 
 def react_loop(messages: list, agent):
+    """Handles the full LLM -> Tool Call -> Observation cycle."""
     while True:
         if not messages:
             return
@@ -88,18 +98,31 @@ def react_loop(messages: list, agent):
 
 def main():
     agent = create_agent()
-    messages = []
-    messages.append(SystemMessage(get_sys_prompt()))
+    messages = [SystemMessage(get_sys_prompt())]
+
+    # Setup prompt session for interactive input
+    session = PromptSession()
 
     try:
         while True:
-            user = input("> User: ")
+            # Use prompt_toolkit for interactive input
+            user = session.prompt("User: ")
+
+            if not user.strip():
+                continue  # Handle empty input
+
             add_human_message(messages, user)
+            # Use renderer for user input display (This will print *after* the prompt line is done)
+            renderer.display_user_input(user)
+
             for res in react_loop(messages, agent):
                 if isinstance(res, AIMessage) and res.content:
-                    print("> AI:", res.content)
+                    # Use renderer for AI output
+                    renderer.display_ai_message(res.content)
                 elif isinstance(res, ToolMessage):
-                    print(" - tool_res:", res.content)
+                    # Use renderer for tool result display (Handles preview truncation)
+                    renderer.display_tool_result(res.content)
+
     except KeyboardInterrupt:
         print("\nChat interupted by user.")
 

@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 
+
 from langchain_core.tools import tool
 
 
@@ -163,6 +164,44 @@ def build_file_tools(workdir: str | os.PathLike[str]) -> list:
             f"path: {target.relative_to(root)}"
         )
 
+    @tool
+    def edit_file(
+        path: Annotated[str, "Path relative to the working directory..."],
+        old_string: Annotated[str, "String to find and replace."],
+        new_string: Annotated[str, "New string to insert."],
+    ) -> str:
+        """Reads a file, replaces all occurrences of old_string with new_string, and overwrites the file."""
+        try:
+            target = _resolve(root, path)
+        except ValueError as e:
+            return f"error: {e}"
+
+        if not target.exists():
+            return f"error: '{path}' does not exist."
+        if not target.is_file():
+            return f"error: '{path}' is not a file; cannot edit."
+
+        try:
+            original_content = target.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            return f"error: '{path}' is not a UTF-8 text file."
+
+        if old_string == "" and new_string == "":
+            return "warning: both strings empty. No change made."
+
+        # Perform replacement
+        new_content = original_content.replace(old_string, new_string)
+
+        if new_content == original_content:
+            return f"no changes found. '{old_string}' not present in {target.relative_to(root)}."
+
+        # Write back the modified content
+        try:
+            target.write_text(new_content, encoding="utf-8")
+            return f"Successfully replaced all occurrences of '{old_string}' with '{new_string}' in {target.relative_to(root)}."
+        except Exception as e:
+            return f"error writing file: {e}"
+
     return [
         read_file,
         write_file,
@@ -170,4 +209,5 @@ def build_file_tools(workdir: str | os.PathLike[str]) -> list:
         delete_file,
         delete_dir_recursive,
         file_info,
+        edit_file,
     ]
