@@ -76,7 +76,6 @@ def build_file_tools(workdir: str | os.PathLike[str]) -> list:
     @tool
     def list_dir(
         path: Annotated[str, "Directory path relative..."] = ".",
-        workdir: str | os.PathLike[str] = None,
     ) -> str:
         """List the immediate contents of a directory (names + type marker)."""
         try:
