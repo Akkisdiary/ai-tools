@@ -1,10 +1,10 @@
 """File CRUD tools for the CLI chat, sandboxed to a working directory.
 
 All paths are resolved against ``workdir`` and rejected with a clear
-error if they escape it (either via ``..`` or symlinks pointing
-outside). This keeps the model from reading or writing arbitrary files
+error if they escape the sandbox. This keeps the model from reading or writing arbitrary files
 on disk.
 """
+
 from __future__ import annotations
 
 import os
@@ -17,13 +17,11 @@ from langchain_core.tools import tool
 
 
 def _resolve(workdir: Path, raw_path: str) -> Path:
-    """Resolve ``raw_path`` against ``workdir`` and ensure it stays inside.
-
-    Raises ``ValueError`` if the resolved path escapes the sandbox.
-    """
+    """Resolve ``raw_path`` against ``workdir`` and ensure it stays inside."""
     candidate = (workdir / raw_path).resolve()
     workdir_resolved = workdir.resolve()
     try:
+        # Check if the candidate path is a subpath of the working directory root
         candidate.relative_to(workdir_resolved)
     except ValueError as exc:
         raise ValueError(
@@ -36,17 +34,16 @@ def _resolve(workdir: Path, raw_path: str) -> Path:
 def build_file_tools(workdir: str | os.PathLike[str]) -> list:
     """Create the file CRUD tools bound to ``workdir``."""
     root = Path(workdir).resolve()
+    # Ensure the sandbox root exists when tools are built
     root.mkdir(parents=True, exist_ok=True)
+
+    # --- Tool Definitions (Keep them clean and focused on I/O) ---
 
     @tool
     def read_file(
-        path: Annotated[
-            str,
-            "Path relative to the working directory, e.g. 'src/main.py'.",
-        ],
+        path: Annotated[str, "Path relative to the working directory..."],
     ) -> str:
-        """Read the contents of a text file. Returns an error string if the
-        file is missing, not a regular file, or larger than 1 MB."""
+        """Read the contents of a text file. Returns an error string if the file is missing, not a regular file, or larger than 1 MB."""
         try:
             target = _resolve(root, path)
         except ValueError as e:
@@ -64,14 +61,10 @@ def build_file_tools(workdir: str | os.PathLike[str]) -> list:
 
     @tool
     def write_file(
-        path: Annotated[
-            str,
-            "Path relative to the working directory, e.g. 'notes/todo.md'.",
-        ],
+        path: Annotated[str, "Path relative to the working directory..."],
         content: Annotated[str, "The full text content to write."],
     ) -> str:
-        """Create or overwrite a text file with the given content. Creates
-        parent directories as needed."""
+        """Create or overwrite a text file with the given content. Creates parent directories as needed."""
         try:
             target = _resolve(root, path)
         except ValueError as e:
@@ -82,10 +75,8 @@ def build_file_tools(workdir: str | os.PathLike[str]) -> list:
 
     @tool
     def list_dir(
-        path: Annotated[
-            str,
-            "Directory path relative to the working directory. Use '.' for the root.",
-        ] = ".",
+        path: Annotated[str, "Directory path relative..."] = ".",
+        workdir: str | os.PathLike[str] = None,
     ) -> str:
         """List the immediate contents of a directory (names + type marker)."""
         try:
@@ -110,13 +101,9 @@ def build_file_tools(workdir: str | os.PathLike[str]) -> list:
 
     @tool
     def delete_file(
-        path: Annotated[
-            str,
-            "Path relative to the working directory to delete.",
-        ],
+        path: Annotated[str, "Path relative to the working directory..."],
     ) -> str:
-        """Delete a file or empty directory. For non-empty directories use
-        ``delete_dir_recursive``."""
+        """Delete a file or empty directory."""
         try:
             target = _resolve(root, path)
         except ValueError as e:
@@ -133,14 +120,9 @@ def build_file_tools(workdir: str | os.PathLike[str]) -> list:
 
     @tool
     def delete_dir_recursive(
-        path: Annotated[
-            str,
-            "Directory path relative to the working directory to remove.",
-        ],
+        path: Annotated[str, "Directory path relative..."],
     ) -> str:
-        """Recursively delete a directory and all of its contents. This is
-        destructive; the model should confirm with the user first if the
-        directory may be important."""
+        """Recursively delete a directory and all of its contents."""
         try:
             target = _resolve(root, path)
         except ValueError as e:
@@ -149,7 +131,6 @@ def build_file_tools(workdir: str | os.PathLike[str]) -> list:
             return f"error: '{path}' does not exist"
         if not target.is_dir():
             return f"error: '{path}' is not a directory"
-        # Refuse to delete the sandbox root itself.
         if target == root:
             return "error: refusing to delete the working directory root"
         shutil.rmtree(target)
@@ -157,10 +138,7 @@ def build_file_tools(workdir: str | os.PathLike[str]) -> list:
 
     @tool
     def file_info(
-        path: Annotated[
-            str,
-            "Path relative to the working directory.",
-        ],
+        path: Annotated[str, "Path relative to the working directory."],
     ) -> str:
         """Return existence, type, size (bytes) and modification time for a path."""
         try:
@@ -173,11 +151,11 @@ def build_file_tools(workdir: str | os.PathLike[str]) -> list:
         kind = (
             "directory"
             if target.is_dir()
-            else "file"
-            if target.is_file()
-            else "other"
+            else "file" if target.is_file() else "other"
         )
-        mtime = datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds")
+        mtime = datetime.fromtimestamp(stat.st_mtime).isoformat(
+            timespec="seconds"
+        )
         return (
             f"exists: True\n"
             f"type: {kind}\n"
@@ -194,13 +172,3 @@ def build_file_tools(workdir: str | os.PathLike[str]) -> list:
         delete_dir_recursive,
         file_info,
     ]
-
-
-TOOL_DESCRIPTIONS = {
-    "read_file": "read a text file",
-    "write_file": "create or overwrite a file",
-    "list_dir": "list directory contents",
-    "delete_file": "delete a single file",
-    "delete_dir_recursive": "recursively delete a directory",
-    "file_info": "existence/type/size/mtime for a path",
-}
