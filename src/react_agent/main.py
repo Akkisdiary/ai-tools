@@ -34,20 +34,9 @@ def add(x: float, y: float) -> float:
 tools = {"add": add, "subtract": subtract}
 
 
-def create_chat():
-    chat = ChatOllama(model="gemma4-128k:latest", temperature=0.2)
-    chat = chat.bind_tools([subtract, add])
-    return chat
-
-
 def create_agent():
-    from langchain.agents import create_agent
-
-    agent = create_agent(
-        model=ChatOllama(model="gemma4-128k:latest", temperature=0.2),
-        tools=[subtract, add],
-        system_prompt=get_sys_prompt(),
-    )
+    chat = ChatOllama(model="gemma4-128k:latest", temperature=0.2)
+    agent = chat.bind_tools([subtract, add])
     return agent
 
 
@@ -76,7 +65,7 @@ def exec_tool(tool_call: ToolCall) -> ToolMessage:
     else:
         try:
             args = tool_call.get("args", {})
-            print(f" - exec tool: {tool_name}({args})")
+            print(f" - exec_tool: {tool_name}({args})")
             result = str(tool(**args))
             status = "success"
         except Exception as exc:
@@ -89,11 +78,11 @@ def exec_tool(tool_call: ToolCall) -> ToolMessage:
     )
 
 
-def react_loop(messages: list, chat):
+def react_loop(messages: list, agent):
     while True:
         if not messages:
             return
-        res: AIMessage = chat.invoke(messages)
+        res: AIMessage = agent.invoke(messages)
         add_ai_message(messages, res)
         yield res
         if res.tool_calls:
@@ -107,7 +96,7 @@ def react_loop(messages: list, chat):
 
 
 def main():
-    chat = create_chat()
+    agent = create_agent()
     messages = []
     messages.append(SystemMessage(get_sys_prompt()))
 
@@ -115,13 +104,13 @@ def main():
         while True:
             user = input("> User: ")
             add_human_message(messages, user)
-            for res in react_loop(messages, chat):
+            for res in react_loop(messages, agent):
                 if isinstance(res, AIMessage) and res.content:
                     print("> AI:", res.content)
                 elif isinstance(res, ToolMessage):
-                    print(" - tool res:", res.content)
+                    print(" - tool_res:", res.content)
     except KeyboardInterrupt:
-        print("\n Chat closed by user.")
+        print("\nChat interupted by user.")
 
 
 if __name__ == "__main__":
