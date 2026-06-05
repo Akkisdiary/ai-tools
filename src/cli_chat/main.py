@@ -16,7 +16,6 @@ from langchain_core.messages import (
 from .file_tools import build_file_tools
 from pathlib import Path
 
-# Import the new renderer
 from .tui_handler import renderer
 
 BASE_DIR = os.path.dirname(__file__)
@@ -79,7 +78,6 @@ def exec_tool(tool_call: ToolCall) -> ToolMessage:
 
 
 def react_loop(messages: list, agent):
-    """Handles the full LLM -> Tool Call -> Observation cycle."""
     while True:
         if not messages:
             return
@@ -100,31 +98,26 @@ def main():
     agent = create_agent()
     messages = [SystemMessage(get_sys_prompt())]
 
-    # Setup prompt session for interactive input
     session = PromptSession()
 
     try:
         while True:
-            # Use prompt_toolkit for interactive input
             user = session.prompt("User: ")
 
             if not user.strip():
-                continue  # Handle empty input
+                continue
 
             add_human_message(messages, user)
-            # Use renderer for user input display (This will print *after* the prompt line is done)
             renderer.display_user_input(user)
 
             for res in react_loop(messages, agent):
                 if isinstance(res, AIMessage) and res.content:
-                    # Use renderer for AI output
                     renderer.display_ai_message(res.content)
                 elif isinstance(res, ToolMessage):
-                    # Use renderer for tool result display (Handles preview truncation)
                     renderer.display_tool_result(res.content)
 
     except KeyboardInterrupt:
-        print("\nChat interupted by user.")
+        renderer.display_error("Chat interupted by user.")
 
 
 if __name__ == "__main__":
