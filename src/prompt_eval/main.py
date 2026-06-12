@@ -1,45 +1,52 @@
 import os
-import logging
 from langchain.messages import HumanMessage
+from langchain_core.messages import AIMessageChunk
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 
-from .utils import convert_to_base64
+from .utils import open_image, open_file
+from dotenv import load_dotenv
 
-# Configuration
-BASE_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "test_cases"
-)
+load_dotenv()
 
-GRADER_SYSTEM_PROMPT = (
-    "You are an expert AI grader. Your task is to evaluate the quality of an AI-generated "
-    "description of an image based on the provided prompt and the image itself.\n\n"
-    "Criteria:\n"
-    "1. Accuracy: Does the description correctly identify elements in the image?\n"
-    "2. Completeness: Does it answer all parts of the user prompt?\n"
-    "3. Detail: Is the description vivid and precise?\n\n"
-    "Provide your evaluation in the following format:\n"
-    "Score: [1-10]\n"
-    "Reasons: [Detailed explanation of why this score was given]"
-)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "unavailable")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "unavailable")
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
-log = logging.getLogger(__name__)
+GRADER_SYSTEM_PROMPT = """
+You are an expert AI grader.
+Your task is to evaluate the quality of an AI-generated description of
+an image based on the provided prompt and the image itself.
+Criteria:
+    1. Accuracy: Does the description correctly identify elements in the image?"
+    2. Completeness: Does it answer all parts of the user prompt?"
+    3. Detail: Is the description vivid and precise?
+Provide your evaluation in the following format:
+- Score: [1-10]
+- Reasons: [Detailed explanation of why this score was given]
+"""
 
 
-def get_vision_response(model, img_b64, prompt):
-    """Invokes the vision model to generate a response for a given image and prompt."""
+def get_vision_response(model: BaseChatModel, img_b64: str, prompt: str):
     image_part = {
         "type": "image_url",
         "image_url": f"data:image/jpeg;base64,{img_b64}",
     }
     text_part = {"type": "text", "text": prompt}
-
-    log.info(f"Generating response for prompt: {prompt[:50]}...")
     response = model.invoke([HumanMessage(content=[image_part, text_part])])
-    return response.content
+    return response
+
+
+def stream_vision_response(model: BaseChatModel, img_b64: str, prompt: str):
+    image_part = {
+        "type": "image_url",
+        "image_url": f"data:image/jpeg;base64,{img_b64}",
+    }
+    text_part = {"type": "text", "text": prompt}
+    response = model.stream([HumanMessage(content=[image_part, text_part])])
+    return response
 
 
 def get_grade(model, img_b64, prompt, response_text):
@@ -65,41 +72,48 @@ def get_grade(model, img_b64, prompt, response_text):
     return grade_response.content
 
 
+def infer_pil_img_type(file_path):
+    ext_to_type = {
+        ".png": "PNG",
+        ".jpg": "JPEG",
+        ".jpeg": "JPEG",
+    }
+    ext = os.path.splitext(file_path)[1]
+    return ext_to_type[ext]
+
+
 def main():
-    # Define test cases: (image_filename, prompt)
-    test_cases = [
-        (
-            "1.jpeg",
-            "Describe the pose of the subject in detail in a single paragraph without any introductory text, headers or footers. Focus on the position of the limbs, the orientation of the body, and any notable features that contribute to the overall posture.",
-        ),
-    ]
+    print("=" * 40)
 
-    log.info("Initializing model...")
-    # Using gemma4 as requested
-    model = ChatOllama(model="gemma4", temperature=0.1)
+    test_model = ChatOllama(model="gemma4", temperature=0.4)
+    # test_model = ChatGoogleGenerativeAI(
+    #     model="gemini-3.5-flash", api_key=GOOGLE_API_KEY
+    # )
 
-    for img_name, prompt in test_cases:
-        img_path = os.path.join(BASE_DIR, img_name)
-        if not os.path.exists(img_path):
-            log.warning(f"Image not found: {img_path}. Skipping.")
-            continue
+    file_path = os.path.join(BASE_DIR, "imgs/img11.jpg")
+    img_type = infer_pil_img_type(file_path)
 
-        img_b64 = convert_to_base64(img_path)
-        log.info(f"Processing {img_name} with prompt: {prompt}")
+    test_img = open_image(file_path, img_type)
+    test_prompt = open_file(os.path.join(BASE_DIR, "PROMPT2.md"))
 
-        # Step 1: Generation
-        response_text = get_vision_response(model, img_b64, prompt)
+    stream = stream_vision_response(test_model, test_img, test_prompt)
+    for chunk in stream:
+        if isinstance(chunk, AIMessageChunk):
+            print(chunk.content, end="")
+        else:
+            print("Unknown chunk:", chunk)
 
-        # Step 2: Grading
-        grade_text = get_grade(model, img_b64, prompt, response_text)
+    # grader_model = ChatOllama(model="gemma4", temperature=0.4)
+    print("\n" + "=" * 40)
 
-        print("\n" + "=" * 80)
-        print(f"TEST CASE: {img_name} | PROMPT: {prompt}")
-        print("-" * 80)
-        print(f"AI RESPONSE:\n{response_text}")
-        print("-" * 80)
-        print(f"GRADER EVALUATION:\n{grade_text}")
-        print("=" * 80 + "\n")
+
+# def main():
+#     # model = ChatOpenAI(model="gpt-5.4", api_key=OPENAI_API_KEY)
+#     model = ChatGoogleGenerativeAI(
+#         model="gemini-2.5-flash", api_key=GOOGLE_API_KEY
+#     )
+#     response = model.invoke([HumanMessage(content="Hi")])
+#     print(response)
 
 
 if __name__ == "__main__":

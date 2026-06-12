@@ -10,6 +10,7 @@ dependencies = [
     "langchain>=1.0.2",
     "langchain-google-genai>=3.0.0",
     "langchain-ollama>=1.1.0",
+    "langchain-openai>=1.3.0",
     "lxml>=6.0.2",
     "numpy>=2.3.4",
     "ollama>=0.6.0",
@@ -31,6 +32,7 @@ dev = [
 [project.scripts]
 ie = "img_tools.img_exif:main"
 cli_chat = "cli_chat.main:main"
+prompt_eval = "prompt_eval.main:main"
 
 [build-system]
 requires = ["hatchling"]
