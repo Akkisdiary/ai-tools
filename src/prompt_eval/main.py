@@ -49,29 +49,6 @@ def stream_vision_response(model: BaseChatModel, img_b64: str, prompt: str):
     return response
 
 
-def get_grade(model, img_b64, prompt, response_text):
-    """Invokes the model to grade a previously generated response."""
-    image_part = {
-        "type": "image_url",
-        "image_url": f"data:image/jpeg;base64,{img_b64}",
-    }
-
-    grading_prompt = (
-        f"{GRADER_SYSTEM_PROMPT}\n\n"
-        f"Original Prompt: {prompt}\n"
-        f"AI Generated Response: {response_text}\n\n"
-        f"Please grade the response now."
-    )
-
-    text_part = {"type": "text", "text": grading_prompt}
-
-    log.info("Grading the response...")
-    grade_response = model.invoke(
-        [HumanMessage(content=[image_part, text_part])]
-    )
-    return grade_response.content
-
-
 def infer_pil_img_type(file_path):
     ext_to_type = {
         ".png": "PNG",
@@ -90,7 +67,8 @@ def main():
     #     model="gemini-3.5-flash", api_key=GOOGLE_API_KEY
     # )
 
-    file_path = os.path.join(BASE_DIR, "imgs/img11.jpg")
+    # file_path = os.path.join(BASE_DIR, "imgs/img11.jpg")
+    file_path = "/Users/akkisdiary/Downloads/joyy.png"
     img_type = infer_pil_img_type(file_path)
 
     test_img = open_image(file_path, img_type)
@@ -99,7 +77,16 @@ def main():
     stream = stream_vision_response(test_model, test_img, test_prompt)
     for chunk in stream:
         if isinstance(chunk, AIMessageChunk):
-            print(chunk.content, end="")
+            if hasattr(chunk, "text") and isinstance(chunk.text, str):
+                print(chunk.text, end="")
+            elif isinstance(chunk.content, str):
+                print(chunk.content, end="")
+            elif isinstance(chunk.content, list):
+                for part in chunk.content:
+                    if part.get("type") == "text":
+                        print(part.get("text"), end="")
+            else:
+                pass
         else:
             print("Unknown chunk:", chunk)
 
