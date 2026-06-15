@@ -1,6 +1,7 @@
 # src/cli_chat/tui_handler.py
 
 import sys
+from typing import Any
 
 
 class ChatRenderer:
@@ -31,14 +32,14 @@ class ChatRenderer:
         print(prompt)
         print("-" * 60 + "\n")
 
-    def display_user_input(self, user: str):
+    def display_user_input(self, user: Any):
         """Displays the current user message."""
         print(f"\n{self.COLOR_USER}> User: {user}{self.COLOR_RESET}")
 
-    def display_ai_message(self, content: str):
+    def display_ai_message(self, content: Any):
         """Streams or displays AI response text."""
         # Use a subtle color for the AI output
-        print(f"\n{self.COLOR_AI}AI: {self.COLOR_RESET}", end="", flush=True)
+        print(f"\n{self.COLOR_AI}> AI: {self.COLOR_RESET}", end="", flush=True)
         print(content)
 
     def display_tool_call_info(self, tool_name: str, args: dict):
@@ -50,7 +51,7 @@ class ChatRenderer:
             f"\n{self.COLOR_TOOL}[AGENT] Calling Tool: {tool_name}({sargs}){self.COLOR_RESET}"
         )
 
-    def display_tool_result(self, content: str):
+    def display_tool_result(self, content: Any):
         """Displays the output received from an executed tool, truncating for preview."""
         # Use a distinct color for machine/system results.
         print(
