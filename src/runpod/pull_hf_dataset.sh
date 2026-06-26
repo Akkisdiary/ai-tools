@@ -1,16 +1,21 @@
 #!/bin/bash
 
-# Usage: curl -sS https://raw.githubusercontent.com/Akkisdiary/ai-tools/refs/heads/main/src/runpod/pull_hf_dataset.sh | bash <repo_id> <dataset_path>
-
 set -e
+
+USAGE='bash <(curl -fsSL https://raw.githubusercontent.com/Akkisdiary/ai-tools/refs/heads/main/src/runpod/pull_hf_dataset.sh) <repo_id> <dataset_path> <dataset_name> [output_dir]'
 
 REPO_ID=$1
 DATASET_PATH=$2
-TARGET_DIR="/app/ai-toolkit/datasets/${REPO_ID}"
+DATASET_NAME=$3
+OUTPUT_DIR=$4
+DEFAULT_TARGET_DIR="/app/ai-toolkit/datasets/${DATASET_NAME}"
+TARGET_DIR="${OUTPUT_DIR:-DEFAULT_TARGET_DIR}"
 
-if [ -z "$REPO_ID" ] || [ -z "$DATASET_PATH" ]; then
+if [[ -z "$REPO_ID" || -z "$DATASET_PATH" ]]; then
     echo "Error: Missing arguments."
-    echo "Usage: hf pull_aitoolkit_dataset_hf.sh <repo_id> <dataset_path>"
+    echo "Usage:"
+    echo ""
+    echo "  $USAGE"
     exit 1
 fi
 
@@ -23,24 +28,18 @@ if ! hf auth whoami &>/dev/null; then
         exit 1
     fi
 else
-    echo "Successfully authenticated with Hugging Face CLI."
+    echo "Successfully authenticated with Hugging Face."
 fi
 
-echo "Starting dataset download for $REPO_ID:$DATASET_PATH..."
-
-mkdir -p "$TARGET_DIR"
-
-
-echo "Starting dataset download for $REPO_ID:$DATASET_PATH (Flattening files)..."
+echo "Downloading dataset from $REPO_ID/$DATASET_PATH to $TARGET_DIR"
 
 mkdir -p "$TARGET_DIR"
 TEMP_DOWNLOAD_DIR=$(mktemp -d)
 
-hf download \
-    --repo-id "$REPO_ID" \
+hf download $REPO_ID \
     --local-dir "$TEMP_DOWNLOAD_DIR" \
     --include "$DATASET_PATH/*" \
-    --local-dir-use-symlinks False
+    --repo-type dataset
 
 if [ $? -ne 0 ]; then
     echo ""
