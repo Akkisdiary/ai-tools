@@ -67,8 +67,7 @@ def main():
     #     model="gemini-3.5-flash", api_key=GOOGLE_API_KEY
     # )
 
-    # file_path = os.path.join(BASE_DIR, "imgs/img11.jpg")
-    file_path = "/Users/akkisdiary/Downloads/joyy.png"
+    file_path = os.path.join(BASE_DIR, "dataset/img11.jpg")
     img_type = infer_pil_img_type(file_path)
 
     test_img = open_image(file_path, img_type)
