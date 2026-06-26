@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: curl -sS [YOUR_GITHUB_RAW_URL] | bash <repo_id> <dataset_path>
+# Usage: curl -sS https://raw.githubusercontent.com/Akkisdiary/ai-tools/refs/heads/main/src/runpod/pull_hf_dataset.sh | bash <repo_id> <dataset_path>
 
 set -e
 
