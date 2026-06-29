@@ -39,61 +39,67 @@ def get_vision_response(model: BaseChatModel, img_b64: str, prompt: str):
     return response
 
 
-def stream_vision_response(model: BaseChatModel, img_b64: str, prompt: str):
-    image_part = {
-        "type": "image_url",
-        "image_url": f"data:image/jpeg;base64,{img_b64}",
-    }
-    text_part = {"type": "text", "text": prompt}
-    response = model.stream([HumanMessage(content=[image_part, text_part])])
+def create_human_message(message: str, img_b64: str | None = None):
+    if img_b64:
+        text_part = {"type": "text", "text": message}
+        img_part = {
+            "type": "image_url",
+            "image_url": f"data:image/jpeg;base64,{img_b64}",
+        }
+        return HumanMessage(content=[img_part, text_part])
+    return HumanMessage(content=message)
+
+
+def stream_vision_response(model: BaseChatModel, messages: list):
+    response = model.stream(messages)
     return response
 
 
-def infer_pil_img_type(file_path):
-    ext_to_type = {
-        ".png": "PNG",
-        ".jpg": "JPEG",
-        ".jpeg": "JPEG",
-    }
-    ext = os.path.splitext(file_path)[1]
-    return ext_to_type[ext]
-
-
 def main():
-    print("=" * 40)
+    # test_model = ChatOllama(model="gemma4", temperature=0.4)
+    test_model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+    # test_model = ChatOpenAI(model="gpt-5.4")
 
-    test_model = ChatOllama(model="gemma4", temperature=0.4)
-    # test_model = ChatGoogleGenerativeAI(
-    #     model="gemini-3.5-flash", api_key=GOOGLE_API_KEY
-    # )
+    img = "dataset/img3.jpg"
+    file_path = os.path.join(BASE_DIR, img)
+    output_path = os.path.join(BASE_DIR, img + ".txt")
 
-    file_path = os.path.join(BASE_DIR, "dataset/img11.jpg")
-    img_type = infer_pil_img_type(file_path)
-
-    test_img = open_image(file_path, img_type)
+    test_img = open_image(file_path)
     test_prompt = open_file(os.path.join(BASE_DIR, "PROMPT2.md"))
 
-    stream = stream_vision_response(test_model, test_img, test_prompt)
+    print("=" * 40)
+
+    messages = [create_human_message(test_prompt, test_img)]
+    stream = stream_vision_response(test_model, messages)
+    full_text = ""
     for chunk in stream:
         if isinstance(chunk, AIMessageChunk):
             if hasattr(chunk, "text") and isinstance(chunk.text, str):
                 print(chunk.text, end="")
+                full_text += chunk.text
             elif isinstance(chunk.content, str):
                 print(chunk.content, end="")
+                full_text += chunk.content
             elif isinstance(chunk.content, list):
                 for part in chunk.content:
-                    if part.get("type") == "text":
+                    if isinstance(part, str):
+                        print(part, end="")
+                        full_text += part
+                    elif isinstance(part, dict) and part.get("type") == "text":
                         print(part.get("text"), end="")
-            else:
-                pass
+                        full_text += str(part.get("text"))
+                    else:
+                        print("Unknown part:", part)
         else:
             print("Unknown chunk:", chunk)
 
-    # grader_model = ChatOllama(model="gemma4", temperature=0.4)
+    with open(output_path, "w") as f:
+        f.write(full_text)
+
     print("\n" + "=" * 40)
 
 
-# def main():
+# def test():
 #     # model = ChatOpenAI(model="gpt-5.4", api_key=OPENAI_API_KEY)
 #     model = ChatGoogleGenerativeAI(
 #         model="gemini-2.5-flash", api_key=GOOGLE_API_KEY
@@ -102,5 +108,9 @@ def main():
 #     print(response)
 
 
-if __name__ == "__main__":
+def run():
     main()
+
+
+if __name__ == "__main__":
+    run()

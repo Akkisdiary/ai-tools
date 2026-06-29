@@ -1,7 +1,18 @@
 import base64
+import os
 from io import BytesIO
 
 from PIL import Image
+
+
+def infer_pil_img_type(file_path):
+    ext_to_type = {
+        ".png": "PNG",
+        ".jpg": "JPEG",
+        ".jpeg": "JPEG",
+    }
+    ext = os.path.splitext(file_path)[1]
+    return ext_to_type[ext]
 
 
 def convert_to_base64(file_path, format="PNG"):
@@ -11,7 +22,8 @@ def convert_to_base64(file_path, format="PNG"):
     return img_str
 
 
-def open_image(file_path, format="PNG"):
+def open_image(file_path):
+    format = infer_pil_img_type(file_path)
     return convert_to_base64(file_path, format)
 
 
