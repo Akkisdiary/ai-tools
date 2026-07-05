@@ -56,16 +56,17 @@ def stream_vision_response(model: BaseChatModel, messages: list):
 
 
 def main():
-    # test_model = ChatOllama(model="gemma4", temperature=0.4)
-    test_model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+    test_model = ChatOllama(model="gemma4-128k:latest", temperature=0.4)
+    # test_model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
     # test_model = ChatOpenAI(model="gpt-5.4")
 
-    img = "dataset/img3.jpg"
+    img = "dataset/img2.jpg"
+    prompt = "PROMPT_EDIT.md"
     file_path = os.path.join(BASE_DIR, img)
     output_path = os.path.join(BASE_DIR, img + ".txt")
 
     test_img = open_image(file_path)
-    test_prompt = open_file(os.path.join(BASE_DIR, "PROMPT2.md"))
+    test_prompt = open_file(os.path.join(BASE_DIR, prompt))
 
     print("=" * 40)
 
