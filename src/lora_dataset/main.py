@@ -96,18 +96,5 @@ def main():
     print("\n" + "=" * 40)
 
 
-def test():
-    # model = ChatOpenAI(model="gpt-5.4", api_key=OPENAI_API_KEY)
-    model = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash", api_key=GOOGLE_API_KEY
-    )
-    response = model.invoke([HumanMessage(content="Hi")])
-    print(response)
-
-
-def run():
-    main()
-
-
 if __name__ == "__main__":
-    run()
+    main()
