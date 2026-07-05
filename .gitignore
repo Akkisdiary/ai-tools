@@ -1,4 +1,7 @@
-dataset/
+*.jpg
+*.png
+*.jpeg
+*.webp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
