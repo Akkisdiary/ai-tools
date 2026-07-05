@@ -1,32 +1,21 @@
+import argparse
 import os
+
+from dotenv import load_dotenv
 from langchain.messages import HumanMessage
-from langchain_core.messages import AIMessageChunk
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_ollama import ChatOllama
+from langchain_core.messages import AIMessageChunk
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
-from .utils import open_image, open_file
-from dotenv import load_dotenv
+from .utils import open_file, open_image
 
 load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "unavailable")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "unavailable")
-
-GRADER_SYSTEM_PROMPT = """
-You are an expert AI grader.
-Your task is to evaluate the quality of an AI-generated description of
-an image based on the provided prompt and the image itself.
-Criteria:
-    1. Accuracy: Does the description correctly identify elements in the image?"
-    2. Completeness: Does it answer all parts of the user prompt?"
-    3. Detail: Is the description vivid and precise?
-Provide your evaluation in the following format:
-- Score: [1-10]
-- Reasons: [Detailed explanation of why this score was given]
-"""
 
 
 def get_vision_response(model: BaseChatModel, img_b64: str, prompt: str):
@@ -56,17 +45,24 @@ def stream_vision_response(model: BaseChatModel, messages: list):
 
 
 def main():
-    test_model = ChatOllama(model="gemma4-128k:latest", temperature=0.4)
-    # test_model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("img_path")
+    parser.add_argument(
+        "--prompt_path",
+        default="prompts/PROMPT_EDIT.md",
+        required=False,
+    )
+    args = parser.parse_args()
+
+    # test_model = ChatOllama(model="gemma4-128k:latest", temperature=0.4)
+    test_model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
     # test_model = ChatOpenAI(model="gpt-5.4")
 
-    img = "dataset/img2.jpg"
-    prompt = "PROMPT_EDIT.md"
-    file_path = os.path.join(BASE_DIR, img)
-    output_path = os.path.join(BASE_DIR, img + ".txt")
+    file_path = os.path.join(BASE_DIR, args.img_path)
+    output_path = os.path.join(BASE_DIR, args.img_path + ".txt")
 
     test_img = open_image(file_path)
-    test_prompt = open_file(os.path.join(BASE_DIR, prompt))
+    test_prompt = open_file(os.path.join(BASE_DIR, args.prompt_path))
 
     print("=" * 40)
 
@@ -100,13 +96,13 @@ def main():
     print("\n" + "=" * 40)
 
 
-# def test():
-#     # model = ChatOpenAI(model="gpt-5.4", api_key=OPENAI_API_KEY)
-#     model = ChatGoogleGenerativeAI(
-#         model="gemini-2.5-flash", api_key=GOOGLE_API_KEY
-#     )
-#     response = model.invoke([HumanMessage(content="Hi")])
-#     print(response)
+def test():
+    # model = ChatOpenAI(model="gpt-5.4", api_key=OPENAI_API_KEY)
+    model = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash", api_key=GOOGLE_API_KEY
+    )
+    response = model.invoke([HumanMessage(content="Hi")])
+    print(response)
 
 
 def run():

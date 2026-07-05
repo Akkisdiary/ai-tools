@@ -32,7 +32,7 @@ dev = [
 [project.scripts]
 ie = "img_tools.img_exif:main"
 cli_chat = "cli_chat.main:main"
-prompt_eval = "prompt_eval.main:run"
+lora_dataset = "lora_dataset.main:run"
 
 [build-system]
 requires = ["hatchling"]

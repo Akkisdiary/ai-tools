@@ -23,8 +23,8 @@ def convert_to_base64(file_path, format="PNG"):
 
 
 def open_image(file_path):
-    format = infer_pil_img_type(file_path)
-    return convert_to_base64(file_path, format)
+    # format = infer_pil_img_type(file_path)
+    return convert_to_base64(file_path)
 
 
 def open_file(file_path):
