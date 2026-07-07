@@ -50,4 +50,7 @@ def get_vision_response(
         else:
             print("Unknown chunk:", chunk)
 
+    if log:
+        print()
+
     return full_text
