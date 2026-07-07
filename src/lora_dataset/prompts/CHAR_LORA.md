@@ -25,14 +25,11 @@ Mouth position, brow tension, cheek engagement — e.g., "mouth closed, corners 
 **3. Pose**
 Exact body and limb orientation. Be anatomically specific — head tilt direction and degree, shoulder height/rotation, arm and hand placement relative to body.
 
-**4. Skin**
-Visible texture details: freckles, pores, shine/matte finish, tan lines, blemishes, hydration sheen.
-
 **5. Makeup**
 Describe what is visibly applied: foundation finish (matte/dewy), eye products (liner style, shadow color and placement), lip color and finish. Skip if no makeup is visible.
 
 **6. Hair**
-Color (including highlights or roots), length, texture (silky, frizzy, wavy, coarse), and specific styling (parted left, tucked behind ear, loose, braided).
+Texture (silky, frizzy, wavy, coarse), and specific styling (parted left, tucked behind ear, loose, braided).
 
 **7. Clothing & Accessories**
 Fabric type and finish, garment fit, visible details (buttons, seams, patterns). Jewelry, eyewear, hair accessories with material and color.

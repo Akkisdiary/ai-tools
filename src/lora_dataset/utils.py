@@ -4,7 +4,7 @@ from io import BytesIO
 from PIL import Image
 from pathlib import Path
 
-from .constants import BASE_DIR
+from constants import BASE_DIR
 
 
 def resolve_path(p: str | Path):
@@ -12,6 +12,20 @@ def resolve_path(p: str | Path):
     if path.is_absolute():
         return path
     return (BASE_DIR / path).resolve()
+
+
+def resolve_dataset_path(p: str | Path):
+    path = Path(p).expanduser()
+    if path.is_absolute():
+        return path
+    return (BASE_DIR / "dataset" / path).resolve()
+
+
+def resolve_prompt_path(p: str | Path):
+    path = Path(p).expanduser()
+    if path.is_absolute():
+        return path
+    return (BASE_DIR / "prompts" / path).resolve()
 
 
 def convert_to_base64(file_path, format="PNG"):
