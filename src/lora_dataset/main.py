@@ -90,7 +90,7 @@ def gen_folder(model: BaseChatModel, folder_path: Path, prompt_path: Path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("path")
+    parser.add_argument("data_path")
     parser.add_argument(
         "--prompt_path",
         default="prompts/PROMPT_EDIT.md",
@@ -102,12 +102,13 @@ def main():
     # model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
     # model = ChatOpenAI(model="gpt-5.4")
 
-    path = resolve_path(args.path)
+    data_path = resolve_path(args.path)
+    prompt_path = resolve_path(args.prompt_path)
 
-    if path.is_dir():
-        gen_folder(model, path, args.prompt_path)
+    if data_path.is_dir():
+        gen_folder(model, data_path, prompt_path)
     else:
-        gen_file(model, path, args.prompt_path)
+        gen_file(model, data_path, prompt_path)
 
 
 if __name__ == "__main__":
