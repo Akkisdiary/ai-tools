@@ -1,0 +1,10 @@
+{
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/src/lora_dataset",
+        "${workspaceFolder}/src/img_tools",
+        "${workspaceFolder}/src/lora_dataset",
+        "${workspaceFolder}/src/react_agent",
+        "${workspaceFolder}/src/yt_spider",
+        "${workspaceFolder}/src/cli_chat"
+    ],
+}
