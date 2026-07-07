@@ -5,9 +5,7 @@ from ai import get_vision_response
 from constants import IMG_SUFFIXES
 from dotenv import load_dotenv
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI
+from langchain.chat_models import init_chat_model
 from utils import (
     read_file,
     read_image,
@@ -23,48 +21,44 @@ class PromptExistsException(Exception):
     pass
 
 
-def gen_edit_prompt(
-    model: BaseChatModel,
-    img_path: Path,
-    prompt_path: Path,
-    trigger_word: str | None = None,
-):
-    if not img_path.exists():
-        print(f"File does not exists {img_path}")
-        return
-
-    if not img_path.is_file():
-        print(f"Not a file {img_path}")
-        return
-
-    out_path = resolve_dataset_path(img_path).with_suffix(".txt")
-
-    if out_path.exists() and out_path.is_file() and out_path.stat().st_size > 0:
-        raise PromptExistsException(f"Prompt exists, skipping {out_path}")
-
-    print(f"Genrating prompt for {img_path}")
-    img_b64 = read_image(img_path)
-    prompt_str = read_file(resolve_prompt_path(prompt_path))
-
-    if isinstance(trigger_word, str):
-        prompt_str = prompt_str.replace("{trigger_word}", trigger_word)
-
-    full_text = get_vision_response(model, img_b64, prompt_str)
-
-    with open(out_path, "w") as f:
-        f.write(full_text)
-
-    print(f"Prompt generated {out_path}")
-
-
 def gen_file(
     model: BaseChatModel,
     img_path: Path,
     prompt_path: Path,
     trigger_word: str | None = None,
 ):
+    print(f"Generating prompt for file: {img_path}")
     try:
-        return gen_edit_prompt(model, img_path, prompt_path, trigger_word)
+
+        if not img_path.exists():
+            print(f"File does not exists {img_path}")
+            return
+
+        if not img_path.is_file():
+            print(f"Not a file {img_path}")
+            return
+
+        out_path = resolve_dataset_path(img_path).with_suffix(".txt")
+
+        if (
+            out_path.exists()
+            and out_path.is_file()
+            and out_path.stat().st_size > 0
+        ):
+            raise PromptExistsException(f"Prompt exists, skipping {out_path}")
+
+        img_b64 = read_image(img_path)
+        prompt_str = read_file(resolve_prompt_path(prompt_path))
+
+        if isinstance(trigger_word, str):
+            prompt_str = prompt_str.replace("{trigger_word}", trigger_word)
+
+        full_text = get_vision_response(model, img_b64, prompt_str)
+
+        with open(out_path, "w") as f:
+            f.write(full_text)
+
+        print(f"Prompt generated {out_path}")
     except PromptExistsException as e:
         print(e)
 
@@ -75,27 +69,32 @@ def gen_folder(
     prompt_path: Path,
     trigger_word: str | None = None,
 ):
-    if not folder_path.exists():
-        raise ValueError(f"Folder does not exist {folder_path}")
+    print(f"Generating prompts for folder: {folder_path}")
 
-    print(f"Generating prompts for folder {folder_path}")
+    if not folder_path.exists():
+        raise ValueError(f"Folder does not exist: {folder_path}")
+
     success = failed = skipped = 0
 
-    for file in folder_path.iterdir():
-        if not file.exists() or not file.is_file():
-            continue
-        if file.suffix not in IMG_SUFFIXES:
-            print(f"Not an image {file}")
-            continue
-        try:
-            gen_file(model, file, prompt_path, trigger_word)
-            success += 1
-        except PromptExistsException as e:
-            skipped += 1
-            print(e)
-        except Exception as e:
-            print(f"Unable to gen prompt for {file}\n{e}")
-            failed += 1
+    try:
+        for file in folder_path.iterdir():
+            if not file.exists() or not file.is_file():
+                continue
+            if file.suffix not in IMG_SUFFIXES:
+                print(f"Not an image: {file}")
+                continue
+            try:
+                gen_file(model, file, prompt_path, trigger_word)
+                success += 1
+            except PromptExistsException as e:
+                skipped += 1
+                print(e)
+            except Exception as e:
+                print(f"Unable to gen prompt: {file}\n{e}")
+                failed += 1
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt: stopping")
+        print()
 
     print(f"{success=}")
     print(f"{failed=}")
@@ -113,6 +112,10 @@ def get_prompt_choices():
 
 def main():
     prompt_choices = get_prompt_choices()
+    model_choices = [
+        "google_genai:gemini-2.5-flash",
+        "ollama:gemma4-128k:latest",
+    ]
     parser = argparse.ArgumentParser()
     parser.add_argument("data_path")
     parser.add_argument(
@@ -126,19 +129,28 @@ def main():
         default=None,
         required=False,
     )
+    parser.add_argument(
+        "--model",
+        default="google_genai:gemini-2.5-flash",
+        required=False,
+        choices=model_choices,
+    )
     args = parser.parse_args()
-
-    model = ChatOllama(model="gemma4-128k:latest", temperature=0.4)
-    # model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
-    # model = ChatOpenAI(model="gpt-5.4")
 
     data_path = resolve_dataset_path(args.data_path)
     prompt_path = resolve_prompt_path(args.prompt_path)
     trigger_word = args.trigger_word
+    model = args.model
 
-    print(f"{data_path=}")
-    print(f"{prompt_path=}")
-    print(f"{trigger_word=}")
+    print("=" * 80)
+    print(f"data_path: {str(data_path)}")
+    print(f"prompt_path: {str(prompt_path)}")
+    print(f"trigger_word: {trigger_word}")
+    print(f"model: {model}")
+    print("=" * 80)
+    print()
+
+    model = init_chat_model(model=model, temperature=0.4)
 
     if data_path.is_dir():
         gen_folder(model, data_path, prompt_path, trigger_word)
