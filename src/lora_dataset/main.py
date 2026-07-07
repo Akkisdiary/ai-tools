@@ -105,6 +105,9 @@ def main():
     data_path = resolve_path(args.path)
     prompt_path = resolve_path(args.prompt_path)
 
+    print(f"{data_path=}")
+    print(f"{prompt_path=}")
+
     if data_path.is_dir():
         gen_folder(model, data_path, prompt_path)
     else:
